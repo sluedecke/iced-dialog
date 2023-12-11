@@ -1,7 +1,7 @@
 use iced::{
     executor,
     widget::{button, column, row, text},
-    Application, Command, Element, Settings, Theme,
+    window, Application, Command, Element, Settings, Theme,
 };
 
 struct Dialog;
@@ -11,6 +11,14 @@ pub enum Message {
     CancelPressed,
     OKPressed,
 }
+
+#[derive(Debug)]
+pub enum DialogResult {
+    Cancel,
+    OK,
+}
+
+static mut IM: Option<DialogResult> = None;
 
 impl Application for Dialog {
     type Executor = executor::Default;
@@ -33,25 +41,28 @@ impl Application for Dialog {
         match message {
             Message::CancelPressed => {
                 println!("Cancel pressed");
-                Command::none()
+                unsafe { IM = Some(DialogResult::Cancel) }
+                window::close()
             }
             Message::OKPressed => {
                 println!("OK pressed");
-                Command::none()
+                unsafe { IM = Some(DialogResult::OK) }
+                window::close()
             }
         }
     }
 
     fn view(&self) -> Element<'_, Self::Message, iced::Renderer<Self::Theme>> {
         // +------------------------------+
-        // |       Ludusavi               |
-        // |   *                          |
-        // |   I   Message                |
-        // |                              |
+        // |         Ludusavi             |
+        // |  ===                         |
+        // |   =     Message              |
+        // |  ===                         |
         // |               [Cancel] [OK]  |
         // +------------------------------+
         row![
             // icon
+            // TODO.2023-12-11 icon
             column![
                 text("Testmessage"),
                 row![
@@ -67,5 +78,9 @@ impl Application for Dialog {
 
 fn main() {
     println!("Hello, world!");
-    println!("{:#?}", Dialog::run(Settings::default()));
+    let d = Dialog::run(Settings::default());
+    println!("{:#?}", d);
+    unsafe {
+        println!("Goodbye world: {IM:#?}");
+    }
 }
