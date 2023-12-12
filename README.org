@@ -12,6 +12,16 @@ Time will show if this works out or not.
 
 Feedback welcome!
 
+** Attributions
+
+All icons used are taken from the great [[https://tabler-icons.io][tabler icons project]]: A set of over 4800
+free MIT-licensed high-quality SVG icons for you to use in your web projects.
+
+Used icons:
+
+- alert-square-rounded
+- info-square-rounded
+
 ** License
 
 To fit into the rust ecosystem, this project is dual licensed as:

@@ -1,15 +1,17 @@
 use std::sync::Mutex;
 
-use iced::{
-    executor,
-    widget::{button, column, row, text},
-    window, Application, Command, Element, Settings, Theme,
-};
+use iced::widget::{button, column, container, row, text};
+use iced::window;
+use iced::{executor, Application, Command, Element, Settings, Theme};
+use icons::Icon;
+
+mod icons;
 
 struct Dialog;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Message {
+    FontLoaded,
     CancelPressed,
     OKPressed,
 }
@@ -34,7 +36,10 @@ impl Application for Dialog {
     type Flags = ();
 
     fn new(_: Self::Flags) -> (Self, Command<Self::Message>) {
-        (Self, Command::none())
+        (
+            Self,
+            iced::font::load(icons::ICONS_DATA).map(|_| Message::FontLoaded),
+        )
     }
 
     fn title(&self) -> String {
@@ -53,6 +58,10 @@ impl Application for Dialog {
                 *RR.lock().unwrap() = Some(DialogResult::OK);
                 window::close()
             }
+            Message::FontLoaded => {
+                println!("Font loaded");
+                Command::none()
+            }
         }
     }
 
@@ -64,9 +73,8 @@ impl Application for Dialog {
         // |  ===                         |
         // |               [Cancel] [OK]  |
         // +------------------------------+
-        row![
-            // icon
-            // TODO.2023-12-11 icon
+        container(row![
+            Icon::InfoSquareRounded.text(),
             column![
                 text("Testmessage"),
                 row![
@@ -75,13 +83,19 @@ impl Application for Dialog {
                     button("OK").on_press(Message::OKPressed),
                 ],
             ],
-        ]
+        ])
+        .padding(24)
         .into()
     }
 }
 
+// TODO.2023-12-12 implement
+// fn confirmation(title: &str, message: &str) -> Result<bool, Error> {}
+// fn alert(title: &str, message: &str) -> Result<(), Error> {}
+
 fn main() {
     println!("Hello, world!");
+    // TODO.2023-12-12 escape shall close window
     println!("{:#?}", Dialog::run(Settings::default()));
     println!("Goodbye world: {RR:#?}");
 }
