@@ -1,0 +1,20 @@
+* iced-dialogs - some basic dialogs on ice
+
+** Why
+
+I would like to have GUI dialogs in ludusavi for alerts and confirmation which
+can be easily "navigated" even with the gamepad controls on a Steam Deck.
+
+As of 2023-12 I don't know of any library which does that, so this project is my
+attempt.
+
+Time will show if this works out or not.
+
+Feedback welcome!
+
+** License
+
+To fit into the rust ecosystem, this project is dual licensed as:
+
+- [[file:LICENSE-APACHE][Apache License (Version 2.0)]] 
+- [[file:LICENSE-MIT][MIT License]]

@@ -20,10 +20,8 @@ pub enum DialogResult {
     OK,
 }
 
-// NOTE.2023-12-11 Variant A: global static with unsafe access
-static mut IM: Option<DialogResult> = None;
-
-// NOTE.2023-12-11 Variant B: global mutex with "safe" access
+// NOTE.2023-12-12 this is not really thread safe, since multiple dialogs from
+// different threads will try to modify this variable, though mutexed.
 pub static RR: Mutex<Option<DialogResult>> = Mutex::new(None);
 
 impl Application for Dialog {
@@ -47,17 +45,11 @@ impl Application for Dialog {
         match message {
             Message::CancelPressed => {
                 println!("Cancel pressed");
-                // NOTE.2023-12-11 Variant A: global static with unsafe access
-                unsafe { IM = Some(DialogResult::Cancel) }
-                // NOTE.2023-12-11 Variant B: global mutex with "safe" access
                 *RR.lock().unwrap() = Some(DialogResult::Cancel);
                 window::close()
             }
             Message::OKPressed => {
                 println!("OK pressed");
-                // NOTE.2023-12-11 Variant A: global static with unsafe access
-                unsafe { IM = Some(DialogResult::OK) }
-                // NOTE.2023-12-11 Variant B: global mutex with "safe" access
                 *RR.lock().unwrap() = Some(DialogResult::OK);
                 window::close()
             }
@@ -91,10 +83,5 @@ impl Application for Dialog {
 fn main() {
     println!("Hello, world!");
     println!("{:#?}", Dialog::run(Settings::default()));
-    // NOTE.2023-12-11 Variant A: global static with unsafe access
-    unsafe {
-        println!("Goodbye world: {IM:#?}");
-    }
-    // NOTE.2023-12-11 Variant B: global mutex with "safe" access
     println!("Goodbye world: {RR:#?}");
 }
