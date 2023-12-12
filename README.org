@@ -1,4 +1,4 @@
-* iced-dialogs - some basic dialogs on ice
+* iced-dialog - some basic dialogs on ice
 
 ** Why
 
