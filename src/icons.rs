@@ -55,7 +55,7 @@ impl Icon {
     pub fn text_small(self) -> Text<'static> {
         text(self.as_char().to_string())
             .font(ICONS)
-            .size(36)
+            .size(20)
             .horizontal_alignment(alignment::Horizontal::Center)
             .vertical_alignment(alignment::Vertical::Center)
             .line_height(1.0)

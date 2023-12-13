@@ -1,22 +1,28 @@
 use std::sync::Mutex;
 
-use gilrs::{Event, Gilrs};
+use gilrs::{Button, Event, Gilrs};
 use iced::futures::SinkExt;
 use iced::widget::{button, column, container, row, text};
-use iced::{executor, subscription, Application, Command, Element, Settings, Theme};
+use iced::{
+    executor, subscription, Alignment, Application, Command, Element, Length, Settings, Theme,
+};
 use iced::{window, Subscription};
 use icons::Icon;
 
 mod icons;
 
-struct Dialog;
+struct Dialog {
+    has_gamepad: bool,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum Message {
     FontLoaded,
     CancelPressed,
     OKPressed,
-    PrintALine,
+    GamepadButton(Button),
+    GamepadConnected,
+    GamepadDisconnected,
 }
 
 #[derive(Debug)]
@@ -34,23 +40,23 @@ fn listen_to_gilrs() -> Subscription<Message> {
         |mut output| async move {
             let mut gilrs = Gilrs::new().unwrap();
             loop {
-                // Examine new events
-                let mut active_gamepad = None;
-                let mut message = None;
-                while let Some(Event { id, event, time }) = gilrs.next_event() {
-                    println!("{:?} New event from {}: {:?}", time, id, event);
-                    active_gamepad = Some(id);
-                }
-
-                // You can also use cached gamepad state
-                if let Some(gamepad) = active_gamepad.map(|id| gilrs.gamepad(id)) {
-                    if gamepad.is_pressed(gilrs::Button::South) {
-                        println!("Button South is pressed (XBox - A, PS - X)");
-                        message = Some(Message::OKPressed);
-                    }
-                }
-                if let Some(m) = message {
-                    let _ = output.send(m).await;
+                while let Some(Event {
+                    id: _,
+                    event,
+                    time: _,
+                }) = gilrs.next_event()
+                {
+                    // println!("{:?} New event from {}: {:?}", time, id, event);
+                    let _ = match event {
+                        gilrs::EventType::Connected => output.send(Message::GamepadConnected).await,
+                        gilrs::EventType::Disconnected => {
+                            output.send(Message::GamepadDisconnected).await
+                        }
+                        gilrs::EventType::ButtonReleased(button, _) => {
+                            output.send(Message::GamepadButton(button)).await
+                        }
+                        _ => Ok(()),
+                    };
                 }
             }
         },
@@ -71,14 +77,21 @@ impl Application for Dialog {
     type Flags = ();
 
     fn new(_: Self::Flags) -> (Self, Command<Self::Message>) {
-        // Iterate over all connected gamepads
-        let gilrs = Gilrs::new().unwrap();
-        for (_id, gamepad) in gilrs.gamepads() {
-            println!("{} is {:?}", gamepad.name(), gamepad.power_info());
-        }
-
         (
-            Self,
+            Self {
+                // NOTE.2023-12-13 to self: this is a way to find first connected gamepad or none
+                has_gamepad: Gilrs::new()
+                    .unwrap()
+                    .gamepads()
+                    .find_map(|(_, gamepad)| {
+                        if gamepad.is_connected() {
+                            Some(true)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(false),
+            },
             iced::font::load(icons::ICONS_DATA).map(|_| Message::FontLoaded),
         )
     }
@@ -89,12 +102,12 @@ impl Application for Dialog {
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
-            Message::CancelPressed => {
+            Message::CancelPressed | Message::GamepadButton(Button::East) => {
                 println!("Cancel pressed");
                 *RR.lock().unwrap() = Some(DialogResult::Cancel);
                 window::close()
             }
-            Message::OKPressed => {
+            Message::OKPressed | Message::GamepadButton(Button::South) => {
                 println!("OK pressed");
                 *RR.lock().unwrap() = Some(DialogResult::OK);
                 window::close()
@@ -103,8 +116,16 @@ impl Application for Dialog {
                 println!("Font loaded");
                 Command::none()
             }
-            Message::PrintALine => {
-                println!("PrintALine");
+            Message::GamepadButton(button) => {
+                println!("Other GamepadButton: {:#?}", button);
+                Command::none()
+            }
+            Message::GamepadConnected => {
+                self.has_gamepad = true;
+                Command::none()
+            }
+            Message::GamepadDisconnected => {
+                self.has_gamepad = false;
                 Command::none()
             }
         }
@@ -116,20 +137,43 @@ impl Application for Dialog {
         // |  ===                         |
         // |   =     Message              |
         // |  ===                         |
-        // |               [Cancel] [OK]  |
+        // |       [(B) Cancel] [(A) OK]  |
         // +------------------------------+
-        container(row![
-            Icon::InfoSquareRounded.text(),
-            column![
-                text("Testmessage"),
-                row![
-                    // buttons
-                    button("Cancel").on_press(Message::CancelPressed),
-                    button("OK").on_press(Message::OKPressed),
-                ],
-            ],
-        ])
+
+        let label_cancel = match self.has_gamepad {
+            true => row![Icon::XboxB.text_small(), "Cancel"].spacing(4),
+            false => row!["Cancel"],
+        };
+        let label_ok = match self.has_gamepad {
+            true => row![Icon::XboxA.text_small(), "OK"].spacing(4),
+            false => row!["OK"],
+        };
+        container(
+            row![
+                Icon::InfoSquareRounded.text(),
+                column![
+                    text("Testmessage")
+                        .vertical_alignment(iced::alignment::Vertical::Top)
+                        .height(Length::Fill),
+                    row![
+                        // normal buttons
+                        button(label_cancel).on_press(Message::CancelPressed),
+                        button(label_ok).on_press(Message::OKPressed),
+                    ]
+                    .spacing(8)
+                    .width(Length::Fill)
+                    .align_items(iced::Alignment::Center)
+                ]
+                .spacing(8),
+            ]
+            .spacing(16)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .align_items(iced::Alignment::Start),
+        )
         .padding(24)
+        .width(Length::Fill)
+        .height(Length::Fill)
         .into()
     }
 
@@ -145,6 +189,16 @@ impl Application for Dialog {
 fn main() {
     println!("Hello, world!");
     // TODO.2023-12-12 escape shall close window
-    println!("{:#?}", Dialog::run(Settings::default()));
+    println!(
+        "{:#?}",
+        Dialog::run(Settings {
+            window: window::Settings {
+                size: (300, 150),
+                ..Default::default()
+            },
+            exit_on_close_request: true,
+            ..Default::default()
+        })
+    );
     println!("Goodbye world: {RR:#?}");
 }
