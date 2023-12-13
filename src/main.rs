@@ -1,8 +1,10 @@
 use std::sync::Mutex;
 
+use gilrs::{Event, Gilrs};
+use iced::futures::SinkExt;
 use iced::widget::{button, column, container, row, text};
-use iced::window;
-use iced::{executor, Application, Command, Element, Settings, Theme};
+use iced::{executor, subscription, Application, Command, Element, Settings, Theme};
+use iced::{window, Subscription};
 use icons::Icon;
 
 mod icons;
@@ -14,12 +16,45 @@ pub enum Message {
     FontLoaded,
     CancelPressed,
     OKPressed,
+    PrintALine,
 }
 
 #[derive(Debug)]
 pub enum DialogResult {
     Cancel,
     OK,
+}
+
+fn listen_to_gilrs() -> Subscription<Message> {
+    struct Connect;
+
+    subscription::channel(
+        std::any::TypeId::of::<Connect>(),
+        0,
+        |mut output| async move {
+            let mut gilrs = Gilrs::new().unwrap();
+            loop {
+                // Examine new events
+                let mut active_gamepad = None;
+                let mut message = None;
+                while let Some(Event { id, event, time }) = gilrs.next_event() {
+                    println!("{:?} New event from {}: {:?}", time, id, event);
+                    active_gamepad = Some(id);
+                }
+
+                // You can also use cached gamepad state
+                if let Some(gamepad) = active_gamepad.map(|id| gilrs.gamepad(id)) {
+                    if gamepad.is_pressed(gilrs::Button::South) {
+                        println!("Button South is pressed (XBox - A, PS - X)");
+                        message = Some(Message::OKPressed);
+                    }
+                }
+                if let Some(m) = message {
+                    let _ = output.send(m).await;
+                }
+            }
+        },
+    )
 }
 
 // NOTE.2023-12-12 this is not really thread safe, since multiple dialogs from
@@ -36,6 +71,12 @@ impl Application for Dialog {
     type Flags = ();
 
     fn new(_: Self::Flags) -> (Self, Command<Self::Message>) {
+        // Iterate over all connected gamepads
+        let gilrs = Gilrs::new().unwrap();
+        for (_id, gamepad) in gilrs.gamepads() {
+            println!("{} is {:?}", gamepad.name(), gamepad.power_info());
+        }
+
         (
             Self,
             iced::font::load(icons::ICONS_DATA).map(|_| Message::FontLoaded),
@@ -62,6 +103,10 @@ impl Application for Dialog {
                 println!("Font loaded");
                 Command::none()
             }
+            Message::PrintALine => {
+                println!("PrintALine");
+                Command::none()
+            }
         }
     }
 
@@ -86,6 +131,10 @@ impl Application for Dialog {
         ])
         .padding(24)
         .into()
+    }
+
+    fn subscription(&self) -> Subscription<Self::Message> {
+        listen_to_gilrs()
     }
 }
 
