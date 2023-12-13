@@ -17,6 +17,14 @@ pub const ICONS: Font = Font {
 pub enum Icon {
     AlertSquareRounded,
     InfoSquareRounded,
+    PlaystationCircle,
+    PlaystationSquare,
+    PlaystationTriangle,
+    PlaystationX,
+    XboxA,
+    XboxB,
+    XboxX,
+    XboxY,
 }
 
 impl Icon {
@@ -24,6 +32,14 @@ impl Icon {
         match self {
             Self::AlertSquareRounded => '\u{f810}',
             Self::InfoSquareRounded => '\u{f635}',
+            Self::PlaystationCircle => '\u{f2ad}',
+            Self::PlaystationSquare => '\u{f2ae}',
+            Self::PlaystationTriangle => '\u{f2af}',
+            Self::PlaystationX => '\u{f2b0}',
+            Self::XboxA => '\u{f2b6}',
+            Self::XboxB => '\u{f2b7}',
+            Self::XboxX => '\u{f2b8}',
+            Self::XboxY => '\u{f2b9}',
         }
     }
 
@@ -31,6 +47,15 @@ impl Icon {
         text(self.as_char().to_string())
             .font(ICONS)
             .size(54)
+            .horizontal_alignment(alignment::Horizontal::Center)
+            .vertical_alignment(alignment::Vertical::Center)
+            .line_height(1.0)
+    }
+
+    pub fn text_small(self) -> Text<'static> {
+        text(self.as_char().to_string())
+            .font(ICONS)
+            .size(36)
             .horizontal_alignment(alignment::Horizontal::Center)
             .vertical_alignment(alignment::Vertical::Center)
             .line_height(1.0)

@@ -21,7 +21,15 @@ Used icons:
 
 - alert-square-rounded
 - info-square-rounded
-
+- playstation-circle
+- playstation-square
+- playstation-triangle
+- playstation-x
+- xbox-a
+- xbox-b
+- xbox-x
+- xbox-y
+  
 ** License
 
 To fit into the rust ecosystem, this project is dual licensed as:
