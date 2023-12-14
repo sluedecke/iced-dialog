@@ -1,5 +1,24 @@
 * iced-dialog - some basic dialogs on ice
 
+** Status: on hold
+
+This library works for a single dialog, but fails with an error if one tries to
+use more than one dialog:
+
+#+begin_src 
+`thread 'main' panicked at 'Creating EventLoop multiple times is not supported.`
+#+end_src
+
+These are related issues
+
+
+* iced: Multi-window support -  https://github.com/iced-rs/iced/issues/27
+* winit: Can't create event loop ondemand -  https://github.com/rust-windowing/winit/issues/2431
+
+Work on the last item has been merged into winit 0.29.0, but iced is yet to pick
+this new release up, so this project in on hold until the situation is resolved.
+
+
 ** Why
 
 I would like to have GUI dialogs in ludusavi for alerts and confirmation which
