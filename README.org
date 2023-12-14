@@ -11,9 +11,8 @@ use more than one dialog:
 
 These are related issues
 
-
-* iced: Multi-window support -  https://github.com/iced-rs/iced/issues/27
-* winit: Can't create event loop ondemand -  https://github.com/rust-windowing/winit/issues/2431
+- iced: Multi-window support -  https://github.com/iced-rs/iced/issues/27
+- winit: Can't create event loop ondemand -  https://github.com/rust-windowing/winit/issues/2431
 
 Work on the last item has been merged into winit 0.29.0, but iced is yet to pick
 this new release up, so this project in on hold until the situation is resolved.
